@@ -1,0 +1,38 @@
+* {
+  box-sizing: border-box;
+}
+html {
+  font-family: 'Source Code Pro', monospace;
+}
+body {
+  margin: 0;
+  background-color: #f0f0f5;
+
+}
+main {
+  width: 320px;
+  height: 620px;
+  margin: 40px auto 0;
+  background-color: #8585ad;
+  border: 10px solid #d0d0e1;
+  font-size: 0;
+}
+.info {
+  margin-left: 50px;
+  font-size: 40px;
+  font-weight: 500;
+  color: #000066;
+  text-shadow: 1px 2px 3px #4d4dff;
+}
+.cell {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #d0d0e1;
+  display: inline-block;
+}
+.movingCell {
+  background-color: #ff66cc;
+}
+.fixedCell {
+  background-color: #00cc66;
+}
