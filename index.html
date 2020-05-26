@@ -9,12 +9,17 @@
   <title>Tetris</title>
 </head>
 <body>
-  <div class="info">
-    Score: <span id="score">0</span><br />
-    Level: <span id="level">1</span>
+  <div class="game">
+    <div class="main"></div>
+    <span class="game-over">Game over</span>
+    <div class="info">
+      Score: <span id="score">0</span><br/>
+      Level: <span id="level">1</span><br/>
+      <button class="btn start">Start</button>
+      <button class="btn pause">Pause</button>
+      <div id="next-tetro"></div>
+    </div>
   </div>
-  <main class="main">
-  </main>
   <script src="./script.js"></script>
 </body>
 </html>

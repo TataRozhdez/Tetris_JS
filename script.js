@@ -1,6 +1,10 @@
 const main = document.querySelector('.main');
 const scoreElem = document.querySelector('#score');
 const levelElem = document.querySelector('#level');
+const nextTetroElem = document.querySelector('#next-tetro');
+const startBtn = document.querySelector('.start');
+const pauseBtn = document.querySelector('.pause');
+const gameOver = document.querySelector('.game-over');
 
 const figures = {
   O: [
@@ -8,10 +12,10 @@ const figures = {
     [1, 1]
   ],
   I: [
-    [0, 1, 0, 0],
-    [0, 1, 0, 0],
-    [0, 1, 0, 0],
-    [0, 1, 0, 0]
+    [0, 0, 0, 0],
+    [1, 1, 1, 1],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0]
   ],
   S: [
     [0, 1, 1],
@@ -40,28 +44,7 @@ const figures = {
   ]
 }
 
-let playField = [
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-];
+let playField = Array(20).fill(0);
 
 let score = 0;
 let currentLevel = 1;
@@ -69,38 +52,46 @@ let currentLevel = 1;
 let possibleLevels = {
   1: {
     scorePerLine: 10,
-    speed: 500,
+    speed: 700,
     nextLevelScore: 50
   },
   2: {
     scorePerLine: 15,
-    speed: 400,
+    speed: 600,
     nextLevelScore: 100
   },
   3: {
     scorePerLine: 20,
-    speed: 300,
+    speed: 500,
     nextLevelScore: 200,
   },
   4: {
     scorePerLine: 30,
-    speed: 200,
+    speed: 400,
     nextLevelScore: 300,
   },
   5: {
     scorePerLine: 50,
-    speed: 100,
+    speed: 300,
     nextLevelScore: Infinity,
   }
 }
 
-let activeTetro = {
-  x: 0,
-  y: 0,
-  shape: [
-    [1, 1],
-    [1, 1],
-  ]
+let gameTimerID;
+let isPaused = true;
+let activeTetro = getNewTetro();
+let nextTetro = getNewTetro();
+
+function getNewTetro() {
+  const possibleFigures = 'IOLZJTS';
+  const random = Math.floor(Math.random() * 7);
+  const newTetro = figures[possibleFigures[random]];
+
+  return {
+    x: Math.floor((10 - newTetro[0].length) / 2),
+    y: 0,
+    shape: newTetro,
+  } 
 }
 
 function draw() {
@@ -119,6 +110,22 @@ function draw() {
     }
   }
   main.innerHTML = mainInnerHTML;
+}
+
+function drawNextTetro() {
+  let nextTetroInnerHTML = '';
+
+  for (let y = 0; y < nextTetro.shape.length; y++) {
+    for (let x = 0; x < nextTetro.shape[y].length; x++) {
+      if (nextTetro.shape[y][x]) {
+        nextTetroInnerHTML += '<div class="cell movingCell"></div>'
+      } else {
+        nextTetroInnerHTML += '<div class="cell"></div>'; 
+      }
+    }
+    nextTetroInnerHTML += '<br/>';
+  }
+  nextTetroElem.innerHTML = nextTetroInnerHTML;
 }
 
 function removePrevActiveTetro() {
@@ -208,12 +215,6 @@ function removeFullLines() {
   }
 }
 
-function getNewTetro() {
-  const possibleFigures = 'IOLZJTS';
-  const random = Math.floor(Math.random()*7);
-  return figures[possibleFigures[random]];
-}
-
 function fixTetro() {
   for (let y = 0;  y < playField.length; y++) {
     for (let x = 0; x < playField[y].length; x++) {
@@ -230,43 +231,93 @@ function moveTetroDown() {
   if (hasCollsions()) {
     activeTetro.y -= 1;
     fixTetro();
-    activeTetro.shape = getNewTetro();
-    activeTetro.x = Math.floor((10 - activeTetro.shape[0].length) / 2);
-    activeTetro.y = 0;
+    activeTetro = nextTetro;
+    if (hasCollsions()) {
+      reset();
+    }
+  nextTetro = getNewTetro();
+  }
+}
+
+function reset() {
+  isPaused = true;
+  clearTimeout(gameTimerID);
+  playField = Array(20).fill(0);
+  draw();
+  gameOver.style.display = "block";
+  main.style.display = "none";
+}
+
+function dropTetro() {
+  for (let y = activeTetro.y; y < playField.length; y++) {
+    activeTetro.y += 1;
+    if (hasCollsions()) {
+      activeTetro.y -= 1;
+      break;
+    }
   }
 }
 
 document.onkeydown = function (e) {
-  if (e.keyCode === 37) {
-    activeTetro.x -= 1;
-    if (hasCollsions()) {
-      activeTetro.x += 1;
-    }
-  } else if (e.keyCode === 39) {
-    activeTetro.x += 1;
-    if (hasCollsions()) {
+  if (!isPaused) {
+    if (e.keyCode === 37) {
       activeTetro.x -= 1;
-    }
-  } else if (e.keyCode === 40) {
-    moveTetroDown()
-  } else if (e.keyCode === 38) {
-    rotateTetro();
+      if (hasCollsions()) {
+        activeTetro.x += 1;
+      }
+    } else if (e.keyCode === 39) {
+      activeTetro.x += 1;
+      if (hasCollsions()) {
+        activeTetro.x -= 1;
+      }
+    } else if (e.keyCode === 40) {
+      moveTetroDown()
+    } else if (e.keyCode === 38) {
+      rotateTetro();
+    } else if (e.keyCode === 32) {
+      dropTetro();
+    }   
+    updateGameState();
   }
-  addActiveTetro();
-  draw();
+};
+
+function updateGameState() {
+  if (!isPaused) {
+    addActiveTetro();
+    draw();
+    drawNextTetro();
+  }
 }
+
+pauseBtn.addEventListener('click', (e) => {
+  if (e.target.innerHTML === 'Pause') {
+    e.target.innerHTML = 'Play';
+    clearTimeout(gameTimerID);
+  } else {
+    e.target.innerHTML = 'Pause';
+    gameTimerID = setTimeout(startGame, possibleLevels[currentLevel].speed);
+  }
+  isPaused = !isPaused;
+})
+
+startBtn.addEventListener('click', (e) => {
+  reset();
+  isPaused = false;
+  gameTimerID = setTimeout(startGame, possibleLevels[currentLevel].speed);
+  gameOver.style.display = "none";
+  main.style.display = "block";
+})
 
 scoreElem.innerHTML = score; 
 levelElem.innerHTML = currentLevel; 
 
-addActiveTetro();
 draw();
 
 function startGame() {
   moveTetroDown();
-  addActiveTetro();
-  draw();
-  setTimeout(startGame, possibleLevels[currentLevel].speed);
+  if (!isPaused) {
+    updateGameState();
+    gameTimerID = setTimeout(startGame, possibleLevels[currentLevel].speed);  
+  }
 }
 
-setTimeout(startGame, possibleLevels[currentLevel].speed);
